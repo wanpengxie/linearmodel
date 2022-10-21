@@ -18,8 +18,8 @@ import (
 
 const LoaderBuffer = 200
 
-var uid_slot = flag.Int("uid_slot", 101, "uid slot")
-var fid_slot = flag.Int("fid_slot", 102, "fid slot")
+var uidSlot = flag.Int("uid_slot", 101, "uid slot")
+var fidSlot = flag.Int("fid_slot", 102, "fid slot")
 
 type IDataLoader interface {
 	Init(path string) error
@@ -29,7 +29,7 @@ type IDataLoader interface {
 	ParallelIterator(path string, worker int) <-chan []*base.Instance
 }
 
-type BaseLoader struct {
+type DataLoader struct {
 	featureMap map[uint16]bool
 	count      int
 	dataChan   chan []string
@@ -38,7 +38,7 @@ type BaseLoader struct {
 	isSigned   bool
 }
 
-func (b *BaseLoader) Init(path string) error {
+func (b *DataLoader) Init(path string) error {
 	b.featureMap = make(map[uint16]bool)
 	conf := conf.ParseConf(path)
 	b.config = conf
@@ -49,7 +49,7 @@ func (b *BaseLoader) Init(path string) error {
 	return nil
 }
 
-func (b *BaseLoader) readline(l string) *base.Instance {
+func (b *DataLoader) readline(l string) *base.Instance {
 	z := new(base.Instance)
 	labelStr, feaListStr, found := strings.Cut(strings.TrimSuffix(l, "\n"), "\t")
 	if !found {
@@ -62,8 +62,8 @@ func (b *BaseLoader) readline(l string) *base.Instance {
 		return nil
 	}
 	z.Label = label
-	fea_row := strings.Split(feaListStr, " ")
-	for _, str := range fea_row {
+	feaRow := strings.Split(feaListStr, " ")
+	for _, str := range feaRow {
 		slotStr, feaStr, found := strings.Cut(str, ":")
 		if !found {
 			glog.Errorf("feature field %s, format error, splitter not found", str)
@@ -72,6 +72,9 @@ func (b *BaseLoader) readline(l string) *base.Instance {
 		slot, err := strconv.ParseUint(slotStr, 10, 64)
 		if err != nil {
 			glog.Errorf("parse feature slot=%s error: %v", slotStr, err)
+			continue
+		}
+		if ok := b.featureMap[uint16(slot)]; !ok {
 			continue
 		}
 		fea := uint64(0)
@@ -83,7 +86,15 @@ func (b *BaseLoader) readline(l string) *base.Instance {
 				continue
 			}
 		} else {
-			text = feaStr
+			text = base.DeepCopyString(feaStr)
+		}
+		if int(slot) == *uidSlot {
+			z.UserId = fea
+			z.UserIdStr = text
+		}
+		if int(slot) == *fidSlot {
+			z.ItemId = fea
+			z.ItemIdStr = text
 		}
 		z.Feas = append(z.Feas, base.Feature{Slot: uint16(slot), Fea: fea, Text: text})
 	}
@@ -95,7 +106,7 @@ func (b *BaseLoader) readline(l string) *base.Instance {
 	return z
 }
 
-func (b *BaseLoader) ReadFile(path string) error {
+func (b *DataLoader) ReadFile(path string) error {
 	f, err := os.Open(path)
 	if err != nil {
 		return err
@@ -136,23 +147,23 @@ func (b *BaseLoader) ReadFile(path string) error {
 	return nil
 }
 
-func (b *BaseLoader) ParseIns(data []string) []*base.Instance {
+func (b *DataLoader) ParseIns(data []string) []*base.Instance {
 	n := len(data)
 	inslist := make([]*base.Instance, 0, n)
 	for i := 0; i < n; i++ {
 		ins := b.readline(data[i])
 		if ins != nil {
-			inslist = append(inslist)
+			inslist = append(inslist, ins)
 		}
 	}
 	return inslist
 }
 
-func (b *BaseLoader) GetData() <-chan []string {
+func (b *DataLoader) GetData() <-chan []string {
 	return b.dataChan
 }
 
-func (b *BaseLoader) ParallelIterator(path string, worker int) <-chan []*base.Instance {
+func (b *DataLoader) ParallelIterator(path string, worker int) <-chan []*base.Instance {
 	insChan := make(chan []*base.Instance, worker*2)
 	go func() {
 		err := b.ReadFile(path)
