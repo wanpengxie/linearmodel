@@ -7,7 +7,6 @@ import (
 func TestConfigParser(t *testing.T) {
 	path := "../test/test.conf"
 	config := ParseConf(path)
-	//fmt.Println(config)
 	if config.OptimConfig == nil {
 		t.Error("parse optimizer config error")
 	}

@@ -100,7 +100,7 @@ func (b *concurrentMap) updateWeightAndEmb(key uint64, slot uint16, label int, g
 	opt.UpdateEmb(gradVec, p)
 }
 
-func (b *concurrentMap) getWeight(key uint64, slot uint16, needInit bool) *base.Weight {
+func (b *concurrentMap) getWeight(key uint64, slot uint16, text string, needInit bool) *base.Weight {
 	if key == 0 {
 		p := b.bias
 		return &base.Weight{W: p.W}
@@ -112,6 +112,7 @@ func (b *concurrentMap) getWeight(key uint64, slot uint16, needInit bool) *base.
 		p = base.NewParameter(b.size)
 		p.Slot = slot
 		p.Fea = key
+		p.Text = base.DeepCopyString(text)
 		b.modelData[key%concurrentCount].data[key] = p
 	}
 	b.unlock(key)

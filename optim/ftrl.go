@@ -37,7 +37,7 @@ func (ftrl *Ftrl) Update(grad float32, parameter *base.Parameter) {
 
 func (ftrl *Ftrl) UpdateEmb(gradVec []float32, parameter *base.Parameter) {
 	if len(gradVec) != len(parameter.VecW) || len(gradVec) != len(parameter.VecN) || len(gradVec) != len(parameter.VecZ) {
-		glog.Fatal("update embedding error, size not equal: grad=%d, emb_w=%d, emb_n=%d, emb_z=%d",
+		glog.Fatalf("update embedding error, size not equal: grad=%d, emb_w=%d, emb_n=%d, emb_z=%d",
 			len(gradVec), len(parameter.VecW), len(parameter.VecN), len(parameter.VecZ))
 	}
 	for i := 0; i < len(parameter.VecW); i++ {

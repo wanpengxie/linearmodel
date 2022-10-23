@@ -58,10 +58,10 @@ func (lr *LRModel) Predict(inslist []*base.Instance) ([]base.Result, error) {
 }
 
 func (lr *LRModel) predictz(ins *base.Instance, needInit bool) float32 {
-	z := lr.model.getWeight(0, 0, false).W
+	z := lr.model.getWeight(0, 0, "", false).W
 	for i, n := 0, len(ins.Feas); i < n; i++ {
 		fea := ins.Feas[i]
-		z += lr.model.getWeight(fea.Fea, fea.Slot, needInit).W
+		z += lr.model.getWeight(fea.Fea, fea.Slot, fea.Text, needInit).W
 	}
 	return base.Sigmoid32(z)
 }

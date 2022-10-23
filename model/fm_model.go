@@ -65,13 +65,14 @@ func (fm *FMModel) Train(inslist []*base.Instance) error {
 }
 
 func (fm *FMModel) predict_(ins *base.Instance, needInit bool) (float32, float32, [][]float32) {
-	z := fm.model.getWeight(0, 0, false).W
+	z := fm.model.getWeight(0, 0, "", false).W
 	sumVec := make([]float32, fm.embSize)
 	gradVec := make([][]float32, 0, len(ins.Feas))
 	for i, n := 0, len(ins.Feas); i < n; i++ {
 		fea := ins.Feas[i].Fea
 		slot := ins.Feas[i].Slot
-		factor := fm.model.getWeight(fea, slot, needInit)
+		text := ins.Feas[i].Text
+		factor := fm.model.getWeight(fea, slot, text, needInit)
 		z += (factor.W - base.VecNorm32(factor.VecW)/2.0)
 		sumVec = base.InPlaceVecTimeAdd(sumVec, factor.VecW, 1.0, 1.0)
 		gradVec = append(gradVec, factor.VecW)

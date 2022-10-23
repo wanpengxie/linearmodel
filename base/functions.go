@@ -4,67 +4,28 @@ import (
 	"math"
 	"math/rand"
 	"strings"
-
-	"github.com/dgryski/go-farm"
 )
 
-const KMAXSIGN = 1e16
-
-type Feature struct {
-	Fea  uint64
-	Slot uint16
-	Text string
+func NEQFloat(a, b float64) bool {
+	eps := 1e-7
+	return math.Abs(a-b) > eps
 }
 
-func (f *Feature) Encode() {
-	fea := farm.Hash64WithSeed([]byte(f.Text), uint64(f.Slot))
-	if fea >= KMAXSIGN {
-		fea = fea >> 11
+func NEQFloat32(a, b float32) bool {
+	eps := 1e-7
+	return math.Abs(float64(a-b)) > eps
+}
+
+func NEQSliceFloat32(a, b []float32) bool {
+	if len(a) != len(b) {
+		return true
 	}
-	f.Fea = uint64(f.Slot)*KMAXSIGN + fea
-}
-
-func (f *Feature) ExtractSlot() uint16 {
-	return uint16(f.Fea / KMAXSIGN)
-}
-
-type Instance struct {
-	Label     int
-	Len       int
-	UserId    uint64
-	ItemId    uint64
-	UserIdStr string
-	ItemIdStr string
-	Feas      []Feature
-}
-
-type Result struct {
-	Label  int
-	Score  float32
-	UserId uint64
-}
-
-type Parameter struct {
-	Slot  uint16
-	Fea   uint64
-	Text  string
-	Show  int
-	Click int
-
-	// weight term
-	W float32
-	Z float32
-	N float32
-
-	// vector term
-	VecW []float32
-	VecN []float32
-	VecZ []float32
-}
-
-type Weight struct {
-	W    float32
-	VecW []float32
+	for i := 0; i < len(a); i++ {
+		if NEQFloat32(a[i], b[i]) {
+			return true
+		}
+	}
+	return false
 }
 
 func DeepCopyString(s string) string {
@@ -72,14 +33,6 @@ func DeepCopyString(s string) string {
 	if _, err := sb.WriteString(s); err != nil {
 	}
 	return sb.String()
-}
-
-func NewParameter(size uint32) *Parameter {
-	return &Parameter{W: 0.0, Z: 0.0, N: 0.0,
-		VecW: RandVec32(size),
-		VecZ: make([]float32, size),
-		VecN: make([]float32, size),
-	}
 }
 
 func RandVec32(n uint32) []float32 {

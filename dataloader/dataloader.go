@@ -53,7 +53,7 @@ func (b *DataLoader) readline(l string) *base.Instance {
 	z := new(base.Instance)
 	labelStr, feaListStr, found := strings.Cut(strings.TrimSuffix(l, "\n"), "\t")
 	if !found {
-		glog.Errorf("line %s, format error: label not found")
+		glog.Errorf("line %s, format error: label not found", l)
 		return nil
 	}
 	label, err := strconv.Atoi(labelStr)
@@ -88,21 +88,25 @@ func (b *DataLoader) readline(l string) *base.Instance {
 		} else {
 			text = base.DeepCopyString(feaStr)
 		}
+		feature := base.Feature{Slot: uint16(slot), Fea: fea, Text: text}
+		if !b.isSigned {
+			feature.Encode()
+		}
 		if int(slot) == *uidSlot {
-			z.UserId = fea
-			z.UserIdStr = text
+			z.UserId = feature.Fea
+			z.UserIdStr = feature.Text
 		}
 		if int(slot) == *fidSlot {
-			z.ItemId = fea
-			z.ItemIdStr = text
+			z.ItemId = feature.Fea
+			z.ItemIdStr = feature.Text
 		}
-		z.Feas = append(z.Feas, base.Feature{Slot: uint16(slot), Fea: fea, Text: text})
+		z.Feas = append(z.Feas, &feature)
 	}
-	if !b.isSigned {
-		for i := range z.Feas {
-			z.Feas[i].Encode()
-		}
-	}
+	//if !b.isSigned {
+	//	for i := range z.Feas {
+	//		z.Feas[i].Encode()
+	//	}
+	//}
 	return z
 }
 
@@ -114,7 +118,7 @@ func (b *DataLoader) ReadFile(path string) (<-chan []string, error) {
 
 	tryLock := b.readMu.TryLock()
 	if !tryLock {
-		return nil, fmt.Errorf("some other place is reading files")
+		return nil, fmt.Errorf("some other place is reading files %s", "")
 	}
 	b.dataChan = make(chan []string, 50)
 	go func() {
@@ -122,7 +126,7 @@ func (b *DataLoader) ReadFile(path string) (<-chan []string, error) {
 		close(b.dataChan)
 		f.Close()
 		b.readMu.Unlock()
-		glog.Info("finish reading file: %s, count: %d", path, count)
+		glog.Infof("finish reading file: %s, count: %d", path, count)
 	}()
 	return b.dataChan, nil
 }

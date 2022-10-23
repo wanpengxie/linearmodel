@@ -145,8 +145,8 @@ func (ffm *FFMModel) predictz(ins *base.Instance, initial bool) (float32, [][]fl
 		// by copy value, not by copy pointer!
 		slot := ins.Feas[i].Slot
 		fea := ins.Feas[i].Fea
-
-		param[i] = ffm.model.getWeight(fea, slot, initial)
+		text := ins.Feas[i].Text
+		param[i] = ffm.model.getWeight(fea, slot, text, initial)
 
 		field := ffm.slot_to_field[uint64(slot)]
 
@@ -166,7 +166,7 @@ func (ffm *FFMModel) predictz(ins *base.Instance, initial bool) (float32, [][]fl
 			ffm_score += s_ffm
 		}
 	}
-	z := ffm.model.getWeight(0, 0, false).W
+	z := ffm.model.getWeight(0, 0, "", false).W
 	for i := 0; i < n; i++ {
 		z += param[i].W
 		field := ffm.slot_to_field[uint64(ins.Feas[i].Slot)]
@@ -256,15 +256,7 @@ func (ffm *FFMModel) calcFfmScore(field_i int, field_j int, ffm_vec []float32) f
 	return s
 }
 
-// calc grad for every part of vecW
 func (ffm *FFMModel) calcGrad(field int, ffmVec []float32, vecW []float32) []float32 {
-	//start_inner_index := (field - 1) * int(ffm.emb_size)
-	//start_ffm_index := (field-1)*int(ffm.emb_size)*int(ffm.num_of_field) + start_inner_index
-	//gradVec := make([]float32, ffm.full_size)
-	//for i := 0; i < int(ffm.emb_size); i++ {
-	//	gradVec[start_inner_index+i] = ffmVec[start_ffm_index+i] - vecW[start_inner_index+i]
-	//}
-	// store ffm part grad
 	field_i := field - 1
 	gradVec := make([]float32, ffm.full_size)
 	for field_j := 0; field_j < int(ffm.num_of_field); field_j++ {

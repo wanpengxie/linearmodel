@@ -9,7 +9,7 @@ import (
 	"linearmodel/conf"
 	"linearmodel/dataloader"
 	"linearmodel/model"
-	"linearmodel/utils"
+	"linearmodel/train_utils"
 )
 
 const NULL_STRING = "NULL"
@@ -36,7 +36,7 @@ func main() {
 	config := conf.ParseConf(*conf_path)
 	glog.Infof("conf path: %s", *conf_path)
 
-	train_list, _ := utils.ParsePath(config.TrainPathList)
+	train_list, _ := train_utils.ParsePath(config.TrainPathList)
 
 	loader := new(dataloader.DataLoader)
 	loader.Init(*conf_path)
@@ -69,7 +69,7 @@ func main() {
 	t := time.Now()
 	for _, path := range train_list {
 		t := time.Now()
-		utils.TrainParallel(lm, loader, *Parallel, path)
+		train_utils.TrainParallel(lm, loader, *Parallel, path)
 		glog.Infof("train %s time: [%s]\n", path, time.Now().Sub(t))
 	}
 	glog.Infof("train time: [%s]\n", time.Now().Sub(t))
@@ -81,7 +81,7 @@ func main() {
 	}
 
 	// ====================eval list ========================
-	utils.EvalParallel(lm, loader, config.EvalList, *Parallel)
+	train_utils.EvalParallel(lm, loader, config.EvalList, *Parallel)
 	glog.Flush()
 
 	// ====================predict list======================

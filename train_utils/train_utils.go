@@ -1,4 +1,4 @@
-package utils
+package train_utils
 
 import (
 	"fmt"
