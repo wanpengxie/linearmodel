@@ -23,9 +23,8 @@ var fidSlot = flag.Int("fid_slot", 102, "fid slot")
 
 type IDataLoader interface {
 	Init(path string) error
-	ReadFile(string) error
+	ReadFile(string) (<-chan []string, error)
 	ParseIns([]string) []*base.Instance
-	GetData() <-chan []string
 	ParallelIterator(path string, worker int) <-chan []*base.Instance
 }
 
@@ -35,6 +34,7 @@ type DataLoader struct {
 	dataChan   chan []string
 	config     *conf.AllConfig
 	readMu     sync.Mutex
+	fileStatus bool
 	isSigned   bool
 }
 
@@ -106,21 +106,28 @@ func (b *DataLoader) readline(l string) *base.Instance {
 	return z
 }
 
-func (b *DataLoader) ReadFile(path string) error {
+func (b *DataLoader) ReadFile(path string) (<-chan []string, error) {
 	f, err := os.Open(path)
 	if err != nil {
-		return err
+		return nil, err
 	}
+
 	tryLock := b.readMu.TryLock()
 	if !tryLock {
-		return fmt.Errorf("some other place is reading files")
+		return nil, fmt.Errorf("some other place is reading files")
 	}
 	b.dataChan = make(chan []string, 50)
-	defer func() {
+	go func() {
+		count := b.readFile(f)
 		close(b.dataChan)
 		f.Close()
 		b.readMu.Unlock()
+		glog.Info("finish reading file: %s, count: %d", path, count)
 	}()
+	return b.dataChan, nil
+}
+
+func (b *DataLoader) readFile(f *os.File) int {
 	r := bufio.NewReader(f)
 	data := make([]string, 0, LoaderBuffer)
 	count := 0
@@ -143,8 +150,7 @@ func (b *DataLoader) ReadFile(path string) error {
 		data = append(data, l)
 		count++
 	}
-	glog.V(3).Info("finish reading file: %s, line count: %d", path, count)
-	return nil
+	return count
 }
 
 func (b *DataLoader) ParseIns(data []string) []*base.Instance {
@@ -159,19 +165,17 @@ func (b *DataLoader) ParseIns(data []string) []*base.Instance {
 	return inslist
 }
 
-func (b *DataLoader) GetData() <-chan []string {
-	return b.dataChan
-}
+//func (b *DataLoader) GetData()  {
+//	return b.dataChan
+//}
 
 func (b *DataLoader) ParallelIterator(path string, worker int) <-chan []*base.Instance {
 	insChan := make(chan []*base.Instance, worker*2)
-	go func() {
-		err := b.ReadFile(path)
-		if err != nil {
-			glog.Fatal(err)
-		}
-	}()
-	dataChan := b.dataChan
+	dataChan, err := b.ReadFile(path)
+	if err != nil {
+		glog.Error(err)
+		return nil
+	}
 	go func() {
 		wg := sync.WaitGroup{}
 		for i := 0; i < worker; i++ {

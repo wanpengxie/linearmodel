@@ -49,7 +49,7 @@ func Losses(result []base.Result) float64 {
 
 func Loss(result base.Result) float64 {
 	eps := 1e-9
-	score := result.Score
+	score := float64(result.Score)
 	if score < eps {
 		score = eps
 	} else if score > 1.0-eps {

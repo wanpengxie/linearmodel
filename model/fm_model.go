@@ -9,7 +9,7 @@ import (
 type FMModel struct {
 	model   *concurrentMap
 	optim   optim.Optimizer
-	conf    conf.AllConfig
+	conf    *conf.AllConfig
 	sample  float64
 	embSize uint32
 	eval    bool
@@ -17,7 +17,7 @@ type FMModel struct {
 	group_sparse bool
 }
 
-func (fm *FMModel) Init(conf conf.AllConfig) error {
+func (fm *FMModel) Init(conf *conf.AllConfig) error {
 	fm.embSize = conf.OptimConfig.EmbSize
 	fm.model = NewConcurrentMap(uint64(MODELCAP), fm.embSize)
 	fm.optim = &optim.Ftrl{}
@@ -56,8 +56,9 @@ func (fm *FMModel) Train(inslist []*base.Instance) error {
 			fea := ins.Feas[j]
 			key := fea.Fea
 			slot := fea.Slot
-			fm.model.update(key, slot, ins.Label, grad, fm.optim)
-			fm.model.updateEmb(key, slot, ins.Label, gradVec[j], fm.optim)
+			//fm.model.update(key, slot, ins.Label, grad, fm.optim)
+			//fm.model.updateEmb(key, slot, ins.Label, gradVec[j], fm.optim)
+			fm.model.updateWeightAndEmb(key, slot, ins.Label, grad, gradVec[j], fm.optim)
 		}
 	}
 	return nil

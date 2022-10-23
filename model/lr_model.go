@@ -9,13 +9,13 @@ import (
 type LRModel struct {
 	model   *concurrentMap
 	optim   optim.Optimizer
-	conf    conf.AllConfig
+	conf    *conf.AllConfig
 	sample  float64
 	embSize uint32
 	eval    bool
 }
 
-func (lr *LRModel) Init(conf conf.AllConfig) error {
+func (lr *LRModel) Init(conf *conf.AllConfig) error {
 	lr.embSize = conf.OptimConfig.EmbSize
 	lr.model = NewConcurrentMap(uint64(MODELCAP), lr.embSize)
 	lr.optim = &optim.Ftrl{}

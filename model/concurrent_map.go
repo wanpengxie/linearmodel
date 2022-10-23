@@ -81,6 +81,25 @@ func (b *concurrentMap) updateEmb(key uint64, slot uint16, label int, grad []flo
 	opt.UpdateEmb(grad, p)
 }
 
+func (b *concurrentMap) updateWeightAndEmb(key uint64, slot uint16, label int, grad float32, gradVec []float32, opt optim.Optimizer) {
+	if key == 0 {
+		opt.Update(grad, b.bias)
+		return
+	}
+	b.lock(key)
+	p, ok := b.modelData[key%concurrentCount].data[key]
+	b.unlock(key)
+	if !ok || len(p.VecW) != int(b.size) || len(p.VecN) != int(b.size) || len(p.VecZ) != int(b.size) {
+		glog.Errorf(">>>> update parameter before exist: key=%d, slot=%d, w=%d, n=%d, z=%d", key, slot,
+			len(p.VecW), len(p.VecN), len(p.VecZ))
+		return
+	}
+	p.Show += 1
+	p.Click += label
+	opt.Update(grad, p)
+	opt.UpdateEmb(gradVec, p)
+}
+
 func (b *concurrentMap) getWeight(key uint64, slot uint16, needInit bool) *base.Weight {
 	if key == 0 {
 		p := b.bias
