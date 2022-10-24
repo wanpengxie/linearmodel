@@ -28,24 +28,12 @@ message FeatureConfig {
   int32 cross = 4;
 }
 
-message EvalList {
-  repeated string inc_train_list = 1;
-  repeated string inc_test_list = 2;
-  repeated string inc_train_test_list = 3;
-}
-
-message PredictList {
-  repeated string test_path_list = 1;
-}
-
 message AllConfig{
   OptimConfig optim_config = 1;
   repeated FeatureConfig feature_list = 2;
   bool is_feature_signed = 3;
   bool group_sparse = 4;
 
-  repeated string train_path_list = 5;
-  repeated EvalList eval_list = 6;
-  repeated PredictList predict_list = 7;
-
+  repeated string train_list = 5;
+  repeated string predict_list = 6;
 }

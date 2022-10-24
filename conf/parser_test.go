@@ -26,7 +26,7 @@ func TestConfigParser(t *testing.T) {
 		itemFea.Cross != 2 || itemFea.VecType != VectorType_RIGHT {
 		t.Error("parse item feature error")
 	}
-	trainList := config.TrainPathList
+	trainList := config.TrainList
 	if len(trainList) != 2 {
 		t.Error("train list parse error")
 	}

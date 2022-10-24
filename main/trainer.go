@@ -36,7 +36,7 @@ func main() {
 	config := conf.ParseConf(*conf_path)
 	glog.Infof("conf path: %s", *conf_path)
 
-	train_list, _ := train_utils.ParsePath(config.TrainPathList)
+	train_list, _ := train_utils.ParsePath(config.TrainList)
 
 	loader := new(dataloader.DataLoader)
 	loader.Init(*conf_path)
@@ -81,7 +81,7 @@ func main() {
 	}
 
 	// ====================eval list ========================
-	train_utils.EvalParallel(lm, loader, config.EvalList, *Parallel)
+	train_utils.EvalParallel(lm, loader, config.PredictList, *Parallel)
 	glog.Flush()
 
 	// ====================predict list======================

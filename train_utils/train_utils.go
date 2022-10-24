@@ -5,12 +5,10 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-	"time"
 
 	"github.com/golang/glog"
 
 	"linearmodel/base"
-	"linearmodel/conf"
 	"linearmodel/dataloader"
 	"linearmodel/metric"
 	"linearmodel/model"
@@ -129,53 +127,8 @@ func PredictParallel(m model.IModel, loader dataloader.IDataLoader, parallel int
 	return res
 }
 
-func EvalParallel(m model.IModel, loader dataloader.IDataLoader, evalList []*conf.EvalList, parallel int) {
-	aucs, gaucs, losses, weight := []float64{}, []float64{}, []float64{}, []float64{}
-	preds := []base.Result{}
-	for _, eval_list := range evalList {
-		inc_train_list, err := ParsePath(eval_list.IncTrainList)
-		inc_test_list, err := ParsePath(eval_list.IncTestList)
-		if len(inc_test_list) == 0 && len(inc_train_list) == 0 {
-			continue
-		}
-		// ==== inc train ====
-		{
-			m.Eval(false)
-			t := time.Now()
-			for _, path := range inc_train_list {
-				t := time.Now()
-				TrainParallel(m, loader, parallel, path)
-				glog.Infof("train %s time: [%s]\n", path, time.Now().Sub(t))
-			}
-			glog.Infof("train time: [%s]\n", time.Now().Sub(t))
-			glog.Infof("============ inc train finished =============")
-		}
-
-		// ==== inc test ====
-		glog.Infof("=== start to test [%s] ===", eval_list.IncTestList)
-		if err != nil {
-			glog.Error("== test path not exist===", err)
-		}
-		m.Eval(true)
-		auc, loss, gauc, w, pred := run_test(inc_test_list, m, loader, parallel)
-		aucs = append(aucs, auc)
-		gaucs = append(gaucs, gauc)
-		losses = append(losses, loss)
-		weight = append(weight, w)
-		preds = append(preds, pred...)
-	}
-	if len(preds) == 0 {
-		return
-	}
-
-	auc_mean, auc_std := metric.Mean(aucs, weight)
-	glog.Info(">> test list auc: ", aucs, " | mean=", auc_mean, ", std=", auc_std)
-	loss_mean, loss_std := metric.Mean(losses, weight)
-	glog.Info(">> test list loss: ", losses, " | mean=", loss_mean, ", std=", loss_std)
-	gauc_mean, gauc_std := metric.Mean(gaucs, weight)
-	glog.Info(">> test list gauc: ", gaucs, " | mean=", gauc_mean, ", std=", gauc_std)
-	auc := metric.AUC(preds)
-	gauc := metric.GroupAUC(preds)
-	loss := metric.Losses(preds)
-	glog.Info(">> test list total records(agg labels) = ", len(preds), ", auc=", auc, ", gauc=", gauc, ", loss=", loss)
+func EvalParallel(m model.IModel, loader dataloader.IDataLoader, evalList []string, parallel int) {
+	m.Eval(true)
+	auc, loss, gauc, _, preds := run_test(evalList, m, loader, parallel)
+	glog.Infof("test samples count=%d\nauc=%.5f\ngauc=%.5f\nloss=%.5f\n", len(preds), auc, gauc, loss)
 }
