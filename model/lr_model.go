@@ -1,6 +1,8 @@
 package model
 
 import (
+	"fmt"
+
 	"linearmodel/base"
 	"linearmodel/conf"
 	"linearmodel/optim"
@@ -25,26 +27,22 @@ func (lr *LRModel) Init(conf *conf.AllConfig) error {
 }
 
 func (lr *LRModel) Load(path string) error {
-	//err := lr.model.load(path)
-	//return err
-	return nil
+	err := lr.model.load(path, 0)
+	return err
 }
 
 func (lr *LRModel) Save(path string) error {
-	//err := lr.model.save(path)
-	return nil
-}
-
-func (lr *LRModel) Load_INC(path string) error {
-	return nil
-	//err := lr.model.(*concurrentMap).load_inc(path)
-	//return err
-}
-
-func (lr *LRModel) Save_INC(path string) error {
-	return nil
-	//err := lr.model.(*concurrentMap).save_inc(path)
-	//return err
+	metaLine := fmt.Sprintf("%d\t%d\t", 0, 0)
+	n := len(lr.conf.FeatureList)
+	for i, feaInfo := range lr.conf.FeatureList {
+		info := fmt.Sprintf("%d:%d", feaInfo.SlotId, feaInfo.Cross)
+		metaLine += info
+		if i != n-1 {
+			metaLine += "\t"
+		}
+	}
+	err := lr.model.save(path, metaLine)
+	return err
 }
 
 func (lr *LRModel) Predict(inslist []*base.Instance) ([]base.Result, error) {

@@ -1,6 +1,8 @@
 package model
 
 import (
+	"fmt"
+
 	"linearmodel/base"
 	"linearmodel/conf"
 	"linearmodel/optim"
@@ -27,11 +29,22 @@ func (fm *FMModel) Init(conf *conf.AllConfig) error {
 }
 
 func (fm *FMModel) Load(path string) error {
-	return nil
+	err := fm.model.load(path, int(fm.embSize))
+	return err
 }
 
 func (fm *FMModel) Save(path string) error {
-	return nil
+	metaLine := fmt.Sprintf("%d\t%d\t", fm.embSize, 0)
+	n := len(fm.conf.FeatureList)
+	for i, feaInfo := range fm.conf.FeatureList {
+		info := fmt.Sprintf("%d:%d", feaInfo.SlotId, feaInfo.Cross)
+		metaLine += info
+		if i != n-1 {
+			metaLine += "\t"
+		}
+	}
+	err := fm.model.save(path, metaLine)
+	return err
 }
 
 func (fm *FMModel) Predict(inslist []*base.Instance) ([]base.Result, error) {

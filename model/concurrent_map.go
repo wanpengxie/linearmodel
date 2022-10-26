@@ -1,6 +1,11 @@
 package model
 
 import (
+	"bufio"
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/golang/glog"
@@ -154,60 +159,103 @@ func (b *concurrentMap) set(key uint64, parameter *base.Parameter) {
 	b.unlock(key)
 }
 
-//func (b *concurrentMap) save(p string) error {
-//	f, err := os.Create(p)
-//	defer f.Close()
+func (b *concurrentMap) save(p string, info string) error {
+	f, err := os.Create(p)
+	defer f.Close()
+	wr := bufio.NewWriter(f)
+	if err != nil {
+		glog.Errorf("creat path: %s fail", p)
+		return err
+	}
+	wr.WriteString(info + "\n")
+	wr.WriteString(fmt.Sprintf("0\t%.8f\n", b.bias.W))
+	for _, x := range b.modelData {
+		for k, v := range x.data {
+			fmt.Fprintf(f, "%s\t%d\t%d\t%.7f\t%s\n", v.Text, v.Slot, k, v.W, base.VecToString(v.VecW))
+		}
+	}
+	return nil
+}
+
 //
-//	if err != nil {
-//		glog.Errorf("creat path: %s fail", p)
-//		return err
-//	}
-//	fmt.Fprintf(f, "0\t%.8f\n", b.bias.W)
-//	for _, x := range b.modelData {
-//		for k, v := range x.data {
-//			fmt.Fprintf(f, "%d\t%.8f\n", k, v.W)
-//		}
-//	}
-//	return nil
-//}
-//
-//func (b *concurrentMap) load(p string) error {
-//	f, err := os.Open(p)
-//	defer f.Close()
-//	if err != nil {
-//		glog.Errorf("load path error: %s", err)
-//		return err
-//	}
-//	r := bufio.NewReader(f)
-//	count := 0
-//	for {
-//		bt, err := r.ReadBytes('\n')
-//		// fmt.Println(string(bt), err)
-//		count++
-//		if err != nil {
-//			break
-//		}
-//		line := strings.TrimSuffix(string(bt), "\n")
-//		row := strings.Split(line, "\t")
-//		if len(row) != 2 {
-//			glog.Fatalf("wrong line[%d]: %s in file %s", count, line, p)
-//		}
-//		key, err := strconv.ParseUint(row[0], 10, 64)
-//		if err != nil {
-//			glog.Errorf("wrong key[%d]: %s in file %s, err=%s", count, row[0], p, err)
-//			continue
-//		}
-//		val, err := strconv.ParseFloat(row[1], 10)
-//		if err != nil {
-//			glog.Errorf("wrong key[%d]: %s in file %s, err=%s", count, row[1], p, err)
-//			continue
-//		}
-//		pm := new(base.Parameter)
-//		pm.W = val
-//		b.set(key, pm)
-//	}
-//	return nil
-//}
+func (b *concurrentMap) load(p string, size int) error {
+	f, err := os.Open(p)
+	defer f.Close()
+	if err != nil {
+		glog.Errorf("load path error: %s", err)
+		return err
+	}
+	r := bufio.NewReader(f)
+	// skip first line
+	_, err = r.ReadString('\n')
+	if err != nil {
+		glog.Error("read meta info error")
+	}
+	biasLine, err := r.ReadString('\n')
+	if err != nil {
+		glog.Error("read meta info error")
+	}
+	line := strings.TrimSuffix(biasLine, "\n")
+	row := strings.Split(line, "\t")
+	if len(row) != 2 {
+		return fmt.Errorf("bias term parse error")
+	}
+	k, err := strconv.ParseUint(row[0], 10, 64)
+	if err != nil {
+		glog.Errorf("parse k error")
+		return err
+	}
+	biasW, err := strconv.ParseFloat(row[1], 64)
+	if err != nil {
+		return err
+	}
+	pm := new(base.Parameter)
+	pm.W = float32(biasW)
+	b.set(k, pm)
+
+	count := 0
+	for {
+		bt, err := r.ReadString('\n')
+		// fmt.Println(string(bt), err)
+		count++
+		if err != nil {
+			break
+		}
+		line := strings.TrimSuffix(bt, "\n")
+		row := strings.Split(line, "\t")
+		if len(row) != 5 {
+			glog.Errorf("wrong line[%d]: %s in file %s", count, line, p)
+		}
+		text := base.DeepCopyString(row[0])
+		slot, err := strconv.ParseUint(row[1], 10, 64)
+		if err != nil {
+			glog.Errorf("wrong key[%d]: %s in file %s, err=%s", count, row[1], p, err)
+			continue
+		}
+		key, err := strconv.ParseUint(row[2], 10, 64)
+		if err != nil {
+			glog.Errorf("wrong key[%d]: %s in file %s, err=%s", count, row[2], p, err)
+			continue
+		}
+		val, err := strconv.ParseFloat(row[3], 10)
+		if err != nil {
+			glog.Errorf("wrong key[%d]: %s in file %s, err=%s", count, row[3], p, err)
+			continue
+		}
+		vec, err := base.StringToVec(row[4], size)
+		if err != nil {
+			glog.Errorf("parse vec error %v", err)
+		}
+		pm := new(base.Parameter)
+		pm.Slot = uint16(slot)
+		pm.Text = text
+		pm.W = float32(val)
+		pm.VecW = vec
+		b.set(key, pm)
+	}
+	return nil
+}
+
 //
 //func (b *concurrentMap) save_inc(p string) error {
 //	f, err := os.Create(p)

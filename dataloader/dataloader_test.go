@@ -27,7 +27,7 @@ func TestDataLoaderRead(t *testing.T) {
 	config := conf.ParseConf(path)
 	dataloader := DataLoader{}
 	dataloader.Init(path)
-	train_list := config.TrainPathList
+	train_list := config.TrainList
 
 	pipe, err := dataloader.ReadFile(train_list[0])
 	if err != nil {

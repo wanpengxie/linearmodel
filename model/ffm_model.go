@@ -1,6 +1,8 @@
 package model
 
 import (
+	"fmt"
+
 	"github.com/golang/glog"
 
 	"linearmodel/base"
@@ -100,11 +102,22 @@ func (ffm *FFMModel) Init(conf *conf.AllConfig) error {
 }
 
 func (ffm *FFMModel) Save(path string) error {
-	return nil
+	err := ffm.model.load(path, int(ffm.full_size))
+	return err
 }
 
 func (ffm *FFMModel) Load(path string) error {
-	return nil
+	metaLine := fmt.Sprintf("%d\t%d\t", ffm.emb_size, ffm.num_of_field)
+	n := len(ffm.conf.FeatureList)
+	for i, feaInfo := range ffm.conf.FeatureList {
+		info := fmt.Sprintf("%d:%d", feaInfo.SlotId, feaInfo.Cross)
+		metaLine += info
+		if i != n-1 {
+			metaLine += "\t"
+		}
+	}
+	err := ffm.model.save(path, metaLine)
+	return err
 }
 
 func (ffm *FFMModel) Eval(p bool) {

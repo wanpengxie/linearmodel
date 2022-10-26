@@ -1,8 +1,10 @@
 package base
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
+	"strconv"
 	"strings"
 )
 
@@ -80,4 +82,34 @@ func InPlaceVecTimeAdd(v1, v2 []float32, a1, a2 float32) []float32 {
 		v1[i] = v1[i]*a1 + v2[i]*a2
 	}
 	return v1
+}
+
+func VecToString(vec []float32) string {
+	line := ""
+	for i := 0; i < len(vec); i++ {
+		line += fmt.Sprintf("%.7f", vec[i])
+		if i != len(vec)-1 {
+			line += ","
+		}
+	}
+	return line
+}
+
+func StringToVec(line string, size int) ([]float32, error) {
+	if size == 0 {
+		return []float32{}, nil
+	}
+	row := strings.Split(line, ",")
+	if len(row) != size {
+		return nil, fmt.Errorf("size not equal")
+	}
+	vec := make([]float32, size)
+	for i := 0; i < size; i++ {
+		p, err := strconv.ParseFloat(row[i], 64)
+		if err != nil {
+			return nil, err
+		}
+		vec[i] = float32(p)
+	}
+	return vec, nil
 }
