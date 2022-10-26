@@ -7,9 +7,10 @@ import (
 const KMAXSIGN = 1e16
 
 type Feature struct {
-	Fea  uint64
-	Slot uint16
-	Text string
+	Fea      uint64
+	Slot     uint16
+	Text     string
+	IsFilter bool
 }
 
 func (f *Feature) Encode() {

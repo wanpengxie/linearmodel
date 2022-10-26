@@ -33,7 +33,8 @@ message AllConfig{
   repeated FeatureConfig feature_list = 2;
   bool is_feature_signed = 3;
   bool group_sparse = 4;
+  uint32 filter_count = 5;
 
-  repeated string train_list = 5;
-  repeated string predict_list = 6;
+  repeated string train_list = 6;
+  repeated string predict_list = 7;
 }

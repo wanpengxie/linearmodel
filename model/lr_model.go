@@ -9,12 +9,14 @@ import (
 )
 
 type LRModel struct {
-	model   *concurrentMap
-	optim   optim.Optimizer
-	conf    *conf.AllConfig
-	sample  float64
-	embSize uint32
-	eval    bool
+	model       *concurrentMap
+	counter     *concurrentCounter
+	optim       optim.Optimizer
+	conf        *conf.AllConfig
+	sample      float64
+	embSize     uint32
+	eval        bool
+	filterCount uint32
 }
 
 func (lr *LRModel) Init(conf *conf.AllConfig) error {
@@ -23,6 +25,8 @@ func (lr *LRModel) Init(conf *conf.AllConfig) error {
 	lr.optim = &optim.Ftrl{}
 	lr.optim.Init(conf.OptimConfig)
 	lr.conf = conf
+	lr.filterCount = conf.FilterCount
+	lr.counter = NewCounter()
 	return nil
 }
 
@@ -55,10 +59,23 @@ func (lr *LRModel) Predict(inslist []*base.Instance) ([]base.Result, error) {
 	return res, nil
 }
 
+func (lr *LRModel) filterIns(ins *base.Instance) {
+	for _, fea := range ins.Feas {
+		key := fea.Fea
+		fea.IsFilter = !lr.counter.count(key, int(lr.filterCount))
+	}
+}
+
 func (lr *LRModel) predictz(ins *base.Instance, needInit bool) float32 {
 	z := lr.model.getWeight(0, 0, "", false).W
+	if needInit {
+		lr.filterIns(ins)
+	}
 	for i, n := 0, len(ins.Feas); i < n; i++ {
 		fea := ins.Feas[i]
+		if fea.IsFilter {
+			continue
+		}
 		z += lr.model.getWeight(fea.Fea, fea.Slot, fea.Text, needInit).W
 	}
 	return base.Sigmoid32(z)
@@ -81,8 +98,12 @@ func (lr *LRModel) Train(inslist []*base.Instance) error {
 		m := len(ins.Feas)
 		lr.model.update(0, 0, ins.Label, grad, lr.optim)
 		for j := 0; j < m; j++ {
-			key := ins.Feas[j].Fea
-			slot := ins.Feas[j].Slot
+			fea := ins.Feas[j]
+			if fea.IsFilter {
+				continue
+			}
+			key := fea.Fea
+			slot := fea.Slot
 			lr.model.update(key, slot, ins.Label, grad, lr.optim)
 		}
 	}
