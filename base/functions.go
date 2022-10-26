@@ -15,7 +15,8 @@ func NEQFloat(a, b float64) bool {
 
 func NEQFloat32(a, b float32) bool {
 	eps := 1e-6
-	return 1.0-math.Abs(float64(b/a)) > eps
+	//return 1.0-math.Abs(float64(b/a)) > eps
+	return math.Abs(float64(a-b)) > eps
 }
 
 func NEQSliceFloat32(a, b []float32) bool {
@@ -37,13 +38,13 @@ func DeepCopyString(s string) string {
 	return sb.String()
 }
 
-func RandVec32(n uint32) []float32 {
+func RandVec32(n uint32, norm float32) []float32 {
 	if n == 0 {
 		return []float32{}
 	}
 	vec := make([]float32, n, n)
 	for i := uint32(0); i < n; i++ {
-		vec[i] = float32((rand.Float64() - 0.5)) / float32(n)
+		vec[i] = float32((rand.Float64() - 0.5)) / norm
 	}
 	return vec
 }
@@ -121,9 +122,16 @@ func EQParameter(pm1, pm2 *Parameter, only_weight bool) bool {
 		}
 	}
 	if NEQFloat32(pm1.W, pm2.W) || NEQFloat32(pm1.Z, pm2.Z) || NEQFloat32(pm1.N, pm2.N) {
+		fmt.Println(pm1.W, pm2.W)
+		fmt.Println(pm1.Z, pm2.Z)
+		fmt.Println(pm1.N, pm2.N)
 		return false
 	}
 	if NEQSliceFloat32(pm1.VecW, pm2.VecW) || NEQSliceFloat32(pm1.VecN, pm2.VecN) || NEQSliceFloat32(pm1.VecZ, pm2.VecZ) {
+		fmt.Println(pm1.VecW, pm2.VecW)
+		fmt.Println(pm1.VecZ, pm2.VecZ)
+		fmt.Println(pm1.VecN, pm2.VecN)
+
 		return false
 	}
 	return true

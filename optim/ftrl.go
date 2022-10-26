@@ -42,7 +42,7 @@ func (ftrl *Ftrl) UpdateEmb(gradVec []float32, parameter *base.Parameter) {
 	}
 	for i := 0; i < len(parameter.VecW); i++ {
 		z, n, w, g := parameter.VecZ[i], parameter.VecN[i], parameter.VecW[i], gradVec[i]
-		parameter.VecZ[i], parameter.VecN[i], parameter.VecW[i] = ftrl.update(g, z, n, w)
+		parameter.VecZ[i], parameter.VecN[i], parameter.VecW[i] = ftrl.updateEmb(g, z, n, w)
 	}
 }
 
@@ -58,6 +58,22 @@ func (ftrl *Ftrl) update(grad, z, n, w float32) (float32, float32, float32) {
 		w = 0
 	} else {
 		w = -(z - sgn*ftrl.l1) / ((ftrl.beta+sqrt32(n))/ftrl.alpha + ftrl.l2)
+	}
+	return z, n, w
+}
+
+func (ftrl *Ftrl) updateEmb(grad, z, n, w float32) (float32, float32, float32) {
+	sigma := (sqrt32(n+grad*grad) - sqrt32(n)) / ftrl.embAlpha
+	z += grad - sigma*w
+	n += grad * grad
+	sgn := float32(1.0)
+	if z < 0 {
+		sgn = -1.0
+	}
+	if sgn*z < ftrl.embL1 {
+		w = 0
+	} else {
+		w = -(z - sgn*ftrl.embL1) / ((ftrl.embBeta+sqrt32(n))/ftrl.embAlpha + ftrl.embL2)
 	}
 	return z, n, w
 }

@@ -248,14 +248,10 @@ func (ffm *FFMModel) calcFmScore(field int, ffm_vec []float32, ffm_norm []float3
 	start_ffm_index := (field)*int(ffm.emb_size)*int(ffm.num_of_field) + (field)*int(ffm.emb_size)
 	start_norm_index := (field) * int(ffm.emb_size)
 	score := float32(0.0)
-	//fmt.Println(">>>>>>", field)
-	//fmt.Println("-----", start_ffm_index, start_norm_index)
 	for i := 0; i < int(ffm.emb_size); i++ {
 		w := (ffm_vec[start_ffm_index+i]*ffm_vec[start_ffm_index+i] - ffm_norm[start_norm_index+i])
-		//fmt.Println(w)
 		score += w
 	}
-	//fmt.Println("total score: ", field, score)
 	return score
 }
 

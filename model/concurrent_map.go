@@ -81,8 +81,8 @@ func (b *concurrentMap) updateEmb(key uint64, slot uint16, label int, grad []flo
 			len(p.VecW), len(p.VecN), len(p.VecZ))
 		return
 	}
-	p.Show += 1
-	p.Click += label
+	//p.Show += 1
+	//p.Click += label
 	opt.UpdateEmb(grad, p)
 }
 
@@ -114,7 +114,7 @@ func (b *concurrentMap) getWeight(key uint64, slot uint16, text string, needInit
 	b.lock(key)
 	p := b.modelData[key%concurrentCount].data[key]
 	if p == nil && needInit {
-		p = base.NewParameter(b.size)
+		p = base.NewParameter(b.size, b.norm)
 		p.Slot = slot
 		p.Fea = key
 		p.Text = base.DeepCopyString(text)
@@ -138,7 +138,7 @@ func (b *concurrentMap) get(key uint64, slot uint16, needInit bool) *base.Parame
 	b.lock(key)
 	p := b.modelData[key%concurrentCount].data[key]
 	if p == nil && needInit {
-		p = base.NewParameter(b.size)
+		p = base.NewParameter(b.size, b.norm)
 		p.Slot = slot
 		p.Fea = key
 		b.modelData[key%concurrentCount].data[key] = p

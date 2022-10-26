@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"math"
 
 	"linearmodel/base"
 	"linearmodel/conf"
@@ -22,6 +23,7 @@ type FMModel struct {
 func (fm *FMModel) Init(conf *conf.AllConfig) error {
 	fm.embSize = conf.OptimConfig.EmbSize
 	fm.model = NewConcurrentMap(uint64(MODELCAP), fm.embSize)
+	fm.model.norm = float32(math.Sqrt(float64(fm.embSize)))
 	fm.optim = &optim.Ftrl{}
 	fm.optim.Init(conf.OptimConfig)
 	fm.conf = conf

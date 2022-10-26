@@ -63,9 +63,9 @@ type Weight struct {
 	VecW []float32
 }
 
-func NewParameter(size uint32) *Parameter {
+func NewParameter(size uint32, norm float32) *Parameter {
 	return &Parameter{W: 0.0, Z: 0.0, N: 0.0,
-		VecW: RandVec32(size),
+		VecW: RandVec32(size, norm),
 		VecZ: make([]float32, size),
 		VecN: make([]float32, size),
 	}
