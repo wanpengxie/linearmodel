@@ -30,7 +30,7 @@ load
 ./trainer -v=3 -logtostderr -conf ${conf_path} -parallel 10 -model ${model_name}  -load ${load_path}
 ```
 ## Config file format
-We using protobuf as config file, like
+We using protobuf for config file, examples
 ```protobuf
 optim_config {
   l1: 0.01
