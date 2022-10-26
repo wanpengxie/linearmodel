@@ -51,11 +51,12 @@ func (b *DataLoader) Init(path string) error {
 
 func (b *DataLoader) readline(l string) *base.Instance {
 	z := new(base.Instance)
-	labelStr, feaListStr, found := strings.Cut(strings.TrimSuffix(l, "\n"), "\t")
-	if !found {
+	row := strings.SplitN(strings.TrimSuffix(l, "\n"), "\t", 2)
+	if len(row) < 2 {
 		glog.Errorf("line %s, format error: label not found", l)
 		return nil
 	}
+	labelStr, feaListStr := row[0], row[1]
 	label, err := strconv.Atoi(labelStr)
 	if err != nil {
 		glog.Errorf("parse label error: line=%s, label=%s, error=%v", l, labelStr, err)
