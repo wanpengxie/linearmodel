@@ -65,11 +65,17 @@ func (b *DataLoader) readline(l string) *base.Instance {
 	z.Label = label
 	feaRow := strings.Split(feaListStr, " ")
 	for _, str := range feaRow {
-		slotStr, feaStr, found := strings.Cut(str, ":")
-		if !found {
+		//slotStr, feaStr, found := strings.Cut(str, ":")
+		//if !found {
+		//	glog.Errorf("feature field %s, format error, splitter not found", str)
+		//	continue
+		//}
+		row := strings.SplitN(str, ":", 2)
+		if len(row) < 2 {
 			glog.Errorf("feature field %s, format error, splitter not found", str)
 			continue
 		}
+		slotStr, feaStr := row[0], row[1]
 		slot, err := strconv.ParseUint(slotStr, 10, 64)
 		if err != nil {
 			glog.Errorf("parse feature slot=%s error: %v", slotStr, err)
