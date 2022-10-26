@@ -5,6 +5,21 @@ LinearModel provide high-performance machine learning algorithoms written by gol
 ## Requirement
 golang >= 1.18
 
+## benchmark
+Criteo dataset benchmark
+```shell
+cd benchmark
+bash run.sh
+```
+| model         | vcore | memory | time  |  auc  |
+|---------------|-------|--------|-------|:-----:|
+| lr            | 30    | 16g    | 2m20s | 0.794 |
+| ffm(8 field)  | 30    | 64g    | 8m30s | 0.809 |
+| ffm(39 field) | 30    |        |       |       |
+
+TODO
+1. feature count filter
+
 ## Usage
 build
 ```shell

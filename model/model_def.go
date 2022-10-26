@@ -6,11 +6,11 @@ import (
 )
 
 var (
-	MODELCAP = 33554432
+	MODELCAP = 100000
 )
 
 const (
-	concurrentCount = 99991
+	concurrentCount = 61
 )
 
 type IModel interface {

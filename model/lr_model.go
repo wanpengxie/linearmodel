@@ -19,7 +19,7 @@ type LRModel struct {
 
 func (lr *LRModel) Init(conf *conf.AllConfig) error {
 	lr.embSize = conf.OptimConfig.EmbSize
-	lr.model = NewConcurrentMap(uint64(MODELCAP), lr.embSize)
+	lr.model = NewConcurrentMap(uint64(MODELCAP), 0)
 	lr.optim = &optim.Ftrl{}
 	lr.optim.Init(conf.OptimConfig)
 	lr.conf = conf
