@@ -159,6 +159,13 @@ func (b *concurrentMap) set(key uint64, parameter *base.Parameter) {
 	b.unlock(key)
 }
 
+func (b *concurrentMap) exist(key uint64) bool {
+	b.lock(key)
+	_, ok := b.modelData[key%concurrentCount].data[key]
+	b.unlock(key)
+	return ok
+}
+
 func (b *concurrentMap) save(p string, info string) error {
 	f, err := os.Create(p)
 	defer f.Close()

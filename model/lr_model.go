@@ -62,6 +62,9 @@ func (lr *LRModel) Predict(inslist []*base.Instance) ([]base.Result, error) {
 func (lr *LRModel) filterIns(ins *base.Instance) {
 	for _, fea := range ins.Feas {
 		key := fea.Fea
+		if lr.model.exist(key) {
+			continue
+		}
 		fea.IsFilter = !lr.counter.count(key, int(lr.filterCount))
 	}
 }
