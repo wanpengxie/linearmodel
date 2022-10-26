@@ -34,7 +34,7 @@ type DataLoader struct {
 	dataChan   chan []string
 	config     *conf.AllConfig
 	readMu     sync.Mutex
-	fileStatus bool
+	readStatus bool
 	isSigned   bool
 }
 
@@ -116,16 +116,17 @@ func (b *DataLoader) ReadFile(path string) (<-chan []string, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	tryLock := b.readMu.TryLock()
-	if !tryLock {
+	if b.readStatus {
 		return nil, fmt.Errorf("some other place is reading files %s", "")
 	}
+	b.readMu.Lock()
+	b.readStatus = true
 	b.dataChan = make(chan []string, 50)
 	go func() {
 		count := b.readFile(f)
 		close(b.dataChan)
 		f.Close()
+		b.readStatus = false
 		b.readMu.Unlock()
 		glog.Infof("finish reading file: %s, count: %d", path, count)
 	}()
