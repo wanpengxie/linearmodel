@@ -29,6 +29,9 @@ type FFMModel struct {
 	slot_to_side          map[uint64]int
 	field_to_side         map[uint64]int
 	decompose_index_table map[int][2]int
+
+	counter     *concurrentCounter
+	filterCount uint32
 }
 
 //
@@ -98,7 +101,19 @@ func (ffm *FFMModel) Init(conf *conf.AllConfig) error {
 	}
 
 	ffm.model = NewConcurrentMap(uint64(MODELCAP), ffm.full_size)
+	ffm.filterCount = conf.FilterCount
+	ffm.counter = NewCounter()
 	return nil
+}
+
+func (lr *FFMModel) filterIns(ins *base.Instance) {
+	for _, fea := range ins.Feas {
+		key := fea.Fea
+		if lr.model.exist(key) {
+			continue
+		}
+		fea.IsFilter = !lr.counter.count(key, int(lr.filterCount))
+	}
 }
 
 func (ffm *FFMModel) Save(path string) error {
@@ -149,6 +164,7 @@ func (ffm *FFMModel) predictz(ins *base.Instance, initial bool) (float32, [][]fl
 	// ffm_vec = [m1, m2, ..m_N], m1=[w1, w2, ...w_N], N=num_of_field
 	ffm_vec := make([]float32, int(ffm.emb_size)*ffm.num_of_field*ffm.num_of_field)
 	// fm part gradient
+	ffm.filterIns(ins)
 	grad_vec := make([][]float32, n, n)
 	// fm_norm
 	ffm_norm := make([]float32, int(ffm.emb_size)*ffm.num_of_field)
@@ -159,6 +175,9 @@ func (ffm *FFMModel) predictz(ins *base.Instance, initial bool) (float32, [][]fl
 		slot := ins.Feas[i].Slot
 		fea := ins.Feas[i].Fea
 		text := ins.Feas[i].Text
+		if ins.Feas[i].IsFilter {
+			continue
+		}
 		param[i] = ffm.model.getWeight(fea, slot, text, initial)
 
 		field := ffm.slot_to_field[uint64(slot)]
@@ -181,6 +200,9 @@ func (ffm *FFMModel) predictz(ins *base.Instance, initial bool) (float32, [][]fl
 	}
 	z := ffm.model.getWeight(0, 0, "", false).W
 	for i := 0; i < n; i++ {
+		if ins.Feas[i].IsFilter {
+			continue
+		}
 		z += param[i].W
 		field := ffm.slot_to_field[uint64(ins.Feas[i].Slot)]
 		if field > 0 {
@@ -203,11 +225,17 @@ func (ffm *FFMModel) train(ins *base.Instance) {
 	m := len(ins.Feas)
 	ffm.model.update(0, 0, label, curGrad, opt)
 	for j := 0; j < m; j++ {
+		if ins.Feas[j].IsFilter {
+			continue
+		}
 		key := ins.Feas[j].Fea
 		slot := ins.Feas[j].Slot
 		ffm.model.update(key, slot, label, curGrad, opt)
 	}
 	for j := 0; j < m; j++ {
+		if ins.Feas[j].IsFilter {
+			continue
+		}
 		key := ins.Feas[j].Fea
 		slot := ins.Feas[j].Slot
 		field := int(ffm.slot_to_field[uint64(slot)])
