@@ -169,11 +169,13 @@ func (b *concurrentMap) save(p string, info string) error {
 	}
 	wr.WriteString(info + "\n")
 	wr.WriteString(fmt.Sprintf("0\t%.8f\n", b.bias.W))
+	wr.Flush()
 	for _, x := range b.modelData {
 		for k, v := range x.data {
-			fmt.Fprintf(f, "%s\t%d\t%d\t%.7f\t%s\n", v.Text, v.Slot, k, v.W, base.VecToString(v.VecW))
+			wr.WriteString(fmt.Sprintf("%s\t%d\t%d\t%.7f\t%s\n", v.Text, v.Slot, k, v.W, base.VecToString(v.VecW)))
 		}
 	}
+	wr.Flush()
 	return nil
 }
 
@@ -193,7 +195,7 @@ func (b *concurrentMap) load(p string, size int) error {
 	}
 	biasLine, err := r.ReadString('\n')
 	if err != nil {
-		glog.Error("read meta info error")
+		glog.Error("read bias info error")
 	}
 	line := strings.TrimSuffix(biasLine, "\n")
 	row := strings.Split(line, "\t")
