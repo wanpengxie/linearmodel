@@ -11,10 +11,12 @@ Criteo dataset benchmark
 cd benchmark
 bash run.sh
 ```
-| model         | vcore | memory | time  |  auc  | loss |
-|---------------|-------|--------|-------|:-----:|------|
-| lr            | 30    | 16g    | 2m20s | 0.794 |  0.456    |
-| ffm(8 field)  | 30    | 64g    | 8m30s | 0.809 | 0.442     |
+| model                           | vcore | memory | time  |  auc   | loss |
+|---------------------------------|-------|--------|-------|:------:|------|
+| lr                              | 30    | 16g    | 2m20s | 0.794  |  0.456    |
+| ffm(8 field, dim=8)             | 30    | 64g    | 8m30s | 0.809  | 0.442     |
+| ffm(8 field, dim=8, filter<20)  | 30    | 20g    | 9m30s | 0.8088 |   0.4433        |
+| ffm(8 field, dim=16, filter<50) | 30    | 20g    | 9m30s | 0.8088 |   0.4433        |
 
 TODO
 1. feature count filter
